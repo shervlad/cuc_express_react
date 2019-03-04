@@ -1,97 +1,32 @@
 const express = require('express');
 const questions = require('./questions');
 const app = express();
+const jwt = require('jsonwebtoken');
+const MongoClient = require('mongodb').MongoClient
 
-active_games = {};
+var db = null
+app.use((req, res, next) => {
+        res.append('Access-Control-Allow-Origin', ['*']);
+        res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+        res.append('Access-Control-Allow-Headers', 'Content-Type');
+        next();
 
-function generate_game_id(){
-    let chars = "abcdefghijklmnopkrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    id = "";
-    for(i=0;i<10;i++){
-        id += chars[Math.floor(Math.random() * chars.length)]
-    }
-    if(active_games.keys.indexOf(id) >= 0){
-        id = generate_game_id();
-    }
-    return id;
-}
-class Game{
-    constructor(id){
-        this.id = id;
-        this.questions = questions;
-        this.current_question = "";
-        this.current_answer = "";
-    }
-
-
-    function serialize(){
-        return {
-            "id": this.id,
-            "questions": this.questions,
-            "current_question": this.current_question,
-            "current_answer": this.current_answer
-        }
-    }
-}
-
-class Question{
-    constructor(){
-        this.images = [];
-        this.texts = [];
-        this.answers = [];
-        this.authors = [];
-        this.team = "";
-        this.comment = "";
-        this.teams_that_answered_correctly = [];
-        this.teams_that_answered_incorrectly = [];
-        this.is_normal = true;
-        this.is_double_blitz = false;
-        this.is_triple_blitz = false;
-    }
-
-    function serialize(){
-        return {
-            "images" : this.images,
-            "texts" : this.texts,
-            "answers" : this.answers,
-            "authors" : this.authors,
-            "team" : this.team,
-            "comment" : this.comment,
-            "teams_that_answered_correctly" : this.teams_that_answered_correctly,
-            "teams_that_answered_incorrectly" : this.teams_that_answered_incorrectly,
-            "is_normal": this.is_normal,
-            "is_double_blitz" : this.is_double_blitz,
-            "is_triple_blitz" : this.is_triple_blitz
-        }
-    }
-}
-
-class Team{
-    constructor(){
-        this.members = [];
-        this.games = {};
-        this.questions = {};
-        this.games_won = 0;
-        this.quesitons_taken = 0;
-        this.questions_played = 0;
-    }
-}
-
-app.get('/api/customers', (req, res) => {
-  const customers = [
-    {id: 1, firstName: 'John', lastName: 'Doe'},
-    {id: 2, firstName: 'Brad', lastName: 'Traversy'},
-    {id: 3, firstName: 'Mary', lastName: 'Swanson'},
-  ];
-  res.json(questions);
 });
 
+MongoClient.connect("mongodb://vladseremet:abc918273645@ds155825.mlab.com:55825/cuc", {useNewUrlParser : true}, function(err,client){
+  if(err) throw err;
+  db = client.db("cuc")
+  db.collection("questions").find().limit(10).toArray(function (err,result){
+    if(err) throw err;
+  })
+})
+
+
 app.get('/api/get_questions', (req,res) => {
-    const questions = [
-        {text: 'vine vidi vici', author: 'Vlad Seremet', team:'phi'},
-        {text: 'whassup biatch?', author: 'Adrian Ojlob', team:'phi'},
-    ];
-    res.json(questions);
+  db.collection("questions").find().limit(10).toArray(function (err,result){
+    if(err) throw err;
+    res.json(result);
+  })
 });
 
 app.get('/api/new_game', (req,res) => {
@@ -106,8 +41,6 @@ app.get('/api/new_game', (req,res) => {
     console.log(return_questions);
     res.json(return_questions);
 });
-
-app.get('/api/submit_answer')
 
 app.get('/api/join_game', (req,res) => {
     // return game object corresponding to game id
