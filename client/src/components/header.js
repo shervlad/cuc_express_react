@@ -9,20 +9,9 @@ import {
 class Header extends Component{
     render(){
         return(
-
             <div className="App-header">
-                <img src={logo} className="App-logo" alt="logo" />
-                <div className="Row">
-                    <div className="Column">
-                        <Link to="/new_game">
-                            New Game
-                        </Link>
-                    </div>
-                    <div className="Column">
-                       <Link to="/join_game">
-                        Join Game
-                       </Link>
-                    </div>
+                <div className="Column">
+                    <h2>CUC</h2>
                 </div>
             </div>
         )
