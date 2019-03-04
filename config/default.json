@@ -1,0 +1,6 @@
+{
+    "db" : {
+        "url" : "mongodb://vladseremet:abc918273645@ds155825.mlab.com:55825/cuc" ,
+        "connectionOptions": {}
+    }
+}

@@ -1,119 +1,46 @@
 const express = require('express');
 const questions = require('./questions');
 const app = express();
+const jwt = require('jsonwebtoken');
+const MongoClient = require('mongodb').MongoClient
+const initDb = require("./server_modules/db").initDb;
+const getDb = require("./server_modules/db").getDb;
+const path = require("path");
 
-active_games = {};
-
-function generate_game_id(){
-    let chars = "abcdefghijklmnopkrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    id = "";
-    for(i=0;i<10;i++){
-        id += chars[Math.floor(Math.random() * chars.length)]
-    }
-    if(active_games.keys.indexOf(id) >= 0){
-        id = generate_game_id();
-    }
-    return id;
-}
-class Game{
-    constructor(id){
-        this.id = id;
-        this.questions = questions;
-        this.current_question = "";
-        this.current_answer = "";
-    }
-
-
-    function serialize(){
-        return {
-            "id": this.id,
-            "questions": this.questions,
-            "current_question": this.current_question,
-            "current_answer": this.current_answer
-        }
-    }
-}
-
-class Question{
-    constructor(){
-        this.images = [];
-        this.texts = [];
-        this.answers = [];
-        this.authors = [];
-        this.team = "";
-        this.comment = "";
-        this.teams_that_answered_correctly = [];
-        this.teams_that_answered_incorrectly = [];
-        this.is_normal = true;
-        this.is_double_blitz = false;
-        this.is_triple_blitz = false;
-    }
-
-    function serialize(){
-        return {
-            "images" : this.images,
-            "texts" : this.texts,
-            "answers" : this.answers,
-            "authors" : this.authors,
-            "team" : this.team,
-            "comment" : this.comment,
-            "teams_that_answered_correctly" : this.teams_that_answered_correctly,
-            "teams_that_answered_incorrectly" : this.teams_that_answered_incorrectly,
-            "is_normal": this.is_normal,
-            "is_double_blitz" : this.is_double_blitz,
-            "is_triple_blitz" : this.is_triple_blitz
-        }
-    }
-}
-
-class Team{
-    constructor(){
-        this.members = [];
-        this.games = {};
-        this.questions = {};
-        this.games_won = 0;
-        this.quesitons_taken = 0;
-        this.questions_played = 0;
-    }
-}
-
-app.get('/api/customers', (req, res) => {
-  const customers = [
-    {id: 1, firstName: 'John', lastName: 'Doe'},
-    {id: 2, firstName: 'Brad', lastName: 'Traversy'},
-    {id: 3, firstName: 'Mary', lastName: 'Swanson'},
-  ];
-  res.json(questions);
+var db = null
+app.use((req, res, next) => {
+        res.append('Access-Control-Allow-Origin', ['*']);
+        res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+        res.append('Access-Control-Allow-Headers', 'Content-Type');
+        next();
 });
 
-app.get('/api/get_questions', (req,res) => {
-    const questions = [
-        {text: 'vine vidi vici', author: 'Vlad Seremet', team:'phi'},
-        {text: 'whassup biatch?', author: 'Adrian Ojlob', team:'phi'},
-    ];
-    res.json(questions);
-});
+app.use(express.static(path.join(__dirname, "client/build")))
 
-app.get('/api/new_game', (req,res) => {
-    //create new game object
-    //add game to server state
-    //add game to database
-    let game_id = generate_game_id();
-    return_questions = [];
-    for(i = 0;i<20;i++){
-        return_questions.push(questions[i])
-    }
-    console.log(return_questions);
-    res.json(return_questions);
-});
+question_collection = null
 
-app.get('/api/submit_answer')
-
-app.get('/api/join_game', (req,res) => {
-    // return game object corresponding to game id
-    // in the user object, add game id to list of active games
-
+MongoClient.connect("mongodb://vladseremet:abc918273645@ds155825.mlab.com:55825/cuc", {useNewUrlParser : true}, function(err,client){
+  if(err) throw err;
+  console.log("connecting to database")
+  db = client.db("cuc")
 })
-const port = 5000;
 
-app.listen(port, () => `Server running on port ${port}`);
+
+
+app.get('/api/get_questions/:pageNumber([0-9]+)', (req,res) => {
+  var page_number = parseInt(req.params["pageNumber"])
+  console.log("page number: ",page_number) 
+  var db = getDb();
+  db.collection("questions").find().skip(page_number*10-10).limit(10).toArray(function (err,result){
+    if(err) throw err;
+    res.json(result);
+  })
+});
+
+const port = 5000;
+initDb(function (err) {
+  app.listen(port, function (err) {
+    if (err)  throw err;
+    console.log("Server running on port " + port);
+  });
+});

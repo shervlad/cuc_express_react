@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import './App.css';
 import Question from './components/question'
+import PageNumbers from './components/PageNumbers'
 import Header from './components/header';
 import Game from './components/game';
 import AuthComponent from './components/auth';
@@ -16,28 +17,9 @@ class App extends Component {
        super(props)
        this.state = {questions:[]}
     }
-    render() {
-      var questions =  this.state.questions.map(q => 
-                     <Question  
-                                      key={q._id} 
-                                      question={q.question}
-                                      answer  ={q.answer}
-                                      comment ={q.comment}
-                                      author  ={q.author}
-                                      source  ={q.source}
-                   />);
-        return (
-            <Router>
-                <div className="App">
-                    <Header/>
-                    {questions} 
-                </div>
-            </Router>
-        );
-    }
-    
-  componentDidMount(){
-    fetch("http://localhost:5000/api/get_questions") 
+    getPage(number){
+      console.log("number: ", number)
+      fetch("http://localhost:5555/api/get_questions/" + number) 
       .then(results => results.json())
       .then(data    => {
         console.log(data)
@@ -45,6 +27,29 @@ class App extends Component {
             questions : data
         })
       })
+
+    }
+    render() {
+      var questions =  this.state.questions.map(q => 
+                                                       <Question  key={q._id} 
+                                                                  question={q.question}
+                                                                  answer  ={q.answer}
+                                                                  comment ={q.comment}
+                                                                  author  ={q.author}
+                                                                  source  ={q.source} />);
+        return (
+            <Router>
+                <div className="App">
+                    <Header/>
+                    {questions} 
+                    <PageNumbers getPage={this.getPage.bind(this)}/>
+                </div>
+            </Router>
+        );
+    }
+    
+  componentDidMount(){
+    this.getPage(1)
   }
 }
 
